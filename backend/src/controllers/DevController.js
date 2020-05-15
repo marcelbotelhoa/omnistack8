@@ -6,15 +6,15 @@ module.exports = {
         const { user } = req.headers;
         const loggedDev = await Dev.findById(user);
 
-        const users = Dev.find({
+        const devs = await Dev.find({
             $and: [
                 { _id: { $ne: user } },
                 { _id: { $nin: loggedDev.likes } },
-                { _id: { $nin: loggedDev.dislikes } }
-            ],
+                { _id: { $nin: loggedDev.dislikes } },
+            ]
         })
 
-        return res.json(users)
+        return res.json(devs)
     },
 
     async store(req, res) {
@@ -30,7 +30,7 @@ module.exports = {
 
         const { name, bio, avatar_url: avatar } = response.data;
 
-        const dev = await Dev.create({ 
+        const dev = await Dev.create({
             name,
             user: username,
             bio,
