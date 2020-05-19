@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, SafeAreaView, Image, StyleSheet, TouchableOpacity } from 'react-native';
 
+import AsyncStorage from '@react-native-community/async-storage'
+import { useNavigation } from '@react-navigation/native'
+
 import api from '../services/api';
 
 import logo from '../assets/logo.png';
@@ -8,42 +11,38 @@ import like from '../assets/like.png';
 import dislike from '../assets/dislike.png';
 
 export default function Main({route}) {
-    const [devs, setDevs] = useState([])
-  const id = route.params?.user ?? 'teste';
-  const navigation = useNavigation();
+    const [users, setUsers] = useState([])
+    const id = route.params?.user ?? 'teste';
+    const navigation = useNavigation();
 
-  async function loadDevs() {
+  async function loadUsers() {
     const res = await api.get('/devs', {
       headers: {
         user: id
       }
     })
 
-    setDevs(res.data)
+    setUsers(res.data)
   }
 
   async function handleLike() {
-    // const [dev, ...rest] = devs;
+    const [user, ...rest] = users;
 
-    // await api.post(`/devs/${dev._id}/likes`, null, {
-    //   headers: { user: id },
-    // })
+    await api.post(`/devs/${user._id}/likes`, null, {
+      headers: { user: id },
+    })
 
-    // setDevs(rest)
-    
-    console.log('handleLike', id)
+    setUsers(rest)
   }
 
   async function handleDislike() {
-    // const [dev, ...rest] = devs;
+    const [user, ...rest] = users;
 
-    // await api.post(`/devs/${dev._id}/dislikes`, null, {
-    //   headers: { user: id },
-    // })
+    await api.post(`/devs/${user._id}/dislikes`, null, {
+      headers: { user: id },
+    })
 
-    // setDevs(rest)
-
-    console.log('handleDislike', id)
+    setUsers(rest)
   }
 
   async function handleLogout() {
@@ -52,28 +51,36 @@ export default function Main({route}) {
   }
 
   useEffect(() => {
-    loadDevs()
+    loadUsers()
   }, [id])
 
     return (
         <SafeAreaView style={styles.container}>
+            <TouchableOpacity onPress={handleLogout}>
             <Image style={styles.logo} source={logo} />
+            </TouchableOpacity>
 
             <View style={styles.cardsContainer}>
-                <View style={[styles.card, { zIndex: 1 }]}>
-                    <Image style={styles.avatar} source={{ uri: 'https://avatars1.githubusercontent.com/u/59174720?v=4' }} />
-                    <View style={styles.footer}>
-                        <Text style={styles.name}>Marcel Botelho</Text>
-                        <Text style={styles.bio} numberOfLines={3}>Aprendiz programador e apredendo muiro com a RocketSeat com suas semanas Omnistack me apresentando as tecnologias mais recentes e como eles funcionan</Text>
-                    </View>
-                </View>
+                { users.length === 0
+                 ? <Text style={styles.empty}>Acabou :(</Text> 
+                 : (
+                    users.map((user, index) => (
+                        <View key={user._id} style={[styles.card, { zIndex: users.length - index }]}>
+                            <Image style={styles.avatar} source={{ uri: user.avatar }} />
+                            <View style={styles.footer}>
+                                <Text style={styles.name}>{user.name}</Text>
+                                <Text style={styles.bio} numberOfLines={3}>{user.bio}</Text>
+                            </View>
+                        </View>
+                        ))
+                 )}
             </View>
 
             <View style={styles.buttonsContainer}>
-                <TouchableOpacity style={styles.buttons}>
+                <TouchableOpacity style={styles.buttons} onPress={handleDislike}>
                     <Image source={dislike} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.buttons}>
+                <TouchableOpacity style={styles.buttons} onPress={handleLike}>
                     <Image source={like} />
                 </TouchableOpacity>
             </View>
@@ -151,5 +158,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginHorizontal: 20,
         elevation: 2,
+    },
+
+    empty: {
+        alignSelf: 'center',
+        color: '#DF4723',
+        fontSize: 24,
+        fontWeight: 'bold',
     },
 });
